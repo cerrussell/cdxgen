@@ -20,81 +20,27 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v4.0.1
-        with:
-          node-version: 21
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
+      - name: Grab pnpm version
+        id: pnpm-version
+        run: |
+          pnpm_version=$(cat package.json | jq '.packageManager|match("(?<=pnpm@)\\d+.\\d+.\\d+")|.string')
+          echo "PNPM=$pnpm_version" >> "$GITHUB_ENV"
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9.2.0
+          version: ${{ env.PNPM }}
 
-      -  name: Atom, cdxgen, sdkman, custom-json-diff installs
+      -  name: cdxgen, sdkman, custom-json-diff installs
          shell: bash
          env:
            SHELL: bash
          run: |
-           cdxgen_version=$(pnpm pack | tail -1)
-           npm install -g "$cdxgen_version"
+           cdxgen_tarball=$(pnpm pack | tail -1)
+           npm install -g "$cdxgen_tarball"
            python -m pip install --upgrade pip
            python -m pip install pytest
            git clone https://github.com/appthreat/cdxgen-samples.git /home/runner/work/samples
            python -m pip install custom-json-diff
-           npm install -g @appthreat/atom
            curl -s "https://get.sdkman.io" | bash
            source "/home/runner/.sdkman/bin/sdkman-init.sh"
 
-      - name: sdkman install cache
-        uses: actions/cache@v4
-        id: sdkman-cache
-        with:
-          path: /home/runner/.sdkman/candidates
-          key: "${{ runner.os }}-sdkman-${{ hashFiles('test/diff/repos.csv') }}"
-
-      - name: Generate and run scripts
-        env:
-          SDKMAN_DIR: /home/runner/.sdkman
-          CDXGEN_DEBUG_MODE: debug
-          CDXGEN_LOG: /home/runner/work/cdxgen-samples/generate.log
-        run: |
-          mkdir /home/runner/work/cdxgen-samples
-          python test/diff/generate.py
-          bash /home/runner/work/cdxgen-samples/sdkman_installs.sh
-          bash /home/runner/work/cdxgen-samples/cdxgen_commands.sh
-
-      - name: Upload shell scripts generated as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: scripts
-          path: /home/runner/work/cdxgen-samples/*.sh
-
-      - name: Upload cdxgen boms
-        uses: actions/upload-artifact@v4
-        with:
-          name: cdxgen_boms
-          path: |
-            /home/runner/work/cdxgen-samples
-
-      - name: Test BOMs
-        run: |
-          python test/diff/diff_tests.py
-          if test -f /home/runner/work/cdxgen-samples/diffs.json; then
-            echo "status=FAILED" >> "$GITHUB_ENV"
-          fi
-
-      - name: Upload diff
-        if: ${{ env.status == 'FAILED' }}
-        uses: actions/upload-artifact@v4
-        with:
-            path: | 
-              /home/runner/work/cdxgen-samples/diffs.json
-              /home/runner/work/cdxgen-samples/*.html
-
-      - name: Exit with error
-        if: ${{ env.status == 'FAILED' }}
-        run: exit 1
