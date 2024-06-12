@@ -27,8 +27,6 @@ jobs:
           echo "PNPM=$pnpm_version" >> "$GITHUB_ENV"
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM }}
 
       -  name: cdxgen, sdkman, custom-json-diff installs
          shell: bash
