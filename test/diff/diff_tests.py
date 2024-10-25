@@ -53,8 +53,8 @@ def compare_snapshot(dir1, dir2, options, repo):
     return status, None, None
 
 
-def perform_snapshot_tests(project_types, dir1, dir2):
-    repo_data = read_csv()
+def perform_snapshot_tests(dir1, dir2, projects, project_types):
+    repo_data = read_csv(projects, project_types)
 
     options = Options(
         allow_new_versions=True,
@@ -79,12 +79,12 @@ def perform_snapshot_tests(project_types, dir1, dir2):
         print("Snapshot tests passed!")
 
 
-def read_csv():
+def read_csv(projects, project_types):
     csv_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "repos.csv")
     with open(csv_file, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         repo_data = list(reader)
-    return filter_repos(repo_data)
+    return filter_repos(repo_data, projects, project_types)
 
 
 if __name__ == '__main__':
@@ -95,5 +95,5 @@ if __name__ == '__main__':
         else:
             project_types = {args.project_types}
     else:
-        project_types = {"python", "go", "javascript", "c#", "java"}
-    perform_snapshot_tests(project_types, args.directories[0], args.directories[1])
+        project_types = None
+    perform_snapshot_tests(args.directories[0], args.directories[1], args.projects, project_types)
