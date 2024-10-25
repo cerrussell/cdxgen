@@ -94,7 +94,7 @@ jobs:
 
       - name: Test BOMs
         run: |
-          python test/diff/diff_tests.py -p java,javascript
+          python test/diff/diff_tests.py -t java,javascript
           if test -f /home/runner/work/new_snapshots/diffs.json; then
             echo "status=FAILED" >> "$GITHUB_ENV"
           fi
