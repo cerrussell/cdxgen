@@ -56,8 +56,6 @@ def perform_snapshot_tests(project_types, dir1, dir2):
 
     failed_diffs = {}
     for repo in repo_data:
-        if repo["language"] not in project_types:
-            continue
         status, result, summary = compare_snapshot(dir1, dir2, options, repo)
         if result:
             print(result)
