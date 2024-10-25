@@ -3,8 +3,11 @@ import logging
 import os
 import pathlib
 import argparse
+from copy import deepcopy
 
 from pathlib import Path
+
+from custom_json_diff.lib.utils import file_write
 
 
 def build_args():
@@ -35,8 +38,14 @@ def build_args():
         dest='output_dir',
     )
     parser.add_argument(
+        '--projects',
         '-p',
-        '--project_types',
+        help='Filter to these projects.',
+        dest='projects',
+    )
+    parser.add_argument(
+        '--types',
+        '-t',
         help='Filter to these project types.',
         dest='project_types',
     )
@@ -152,21 +161,55 @@ def exec_on_repo(clone, output_dir, skip_build, repo):
         commands.append(f'{clone_repo(repo["link"], repo["repo_dir"])}')
         commands.append(f'{list2cmdline(["cd", repo["repo_dir"]])}')
         commands.append(f'{checkout_commit(repo["commit"])}')
-    if not skip_build and len(repo['pre_build_cmd']) > 0:
-        cmds = repo['pre_build_cmd'].split(';')
+    if not skip_build and len(repo["pre_build_cmd"]) > 0:
+        cmds = repo["pre_build_cmd"].split(';')
         cmds = [cmd.lstrip().rstrip() for cmd in cmds]
         for cmd in cmds:
             new_cmd = list(cmd.split(' '))
             commands.append(f'{list2cmdline(new_cmd)}')
-    if not skip_build and len(repo['build_cmd']) > 0:
-        cmds = repo['build_cmd'].split(';')
+    if not skip_build and len(repo["build_cmd"]) > 0:
+        cmds = repo["build_cmd"].split(";")
         cmds = [cmd.lstrip().rstrip() for cmd in cmds]
         for cmd in cmds:
             new_cmd = list(cmd.split(' '))
-            commands.append(f'{list2cmdline(new_cmd)}')
-    commands.append(f'{run_cdxgen(repo, output_dir)}')
-    commands = '\n'.join(commands)
+            commands.append(f"{list2cmdline(new_cmd)}")
+    commands.append(f"{run_cdxgen(repo, output_dir)}")
+    commands = "\n".join(commands)
     return commands
+
+
+def expand_multi_versions(repo_data):
+    """
+    Creates additional entries for repositories testing multiple versions
+
+    Args:
+        repo_data (list[dict]): Contains the sample repository data
+
+    Returns:
+        list[dict]: The expanded repository data
+    """
+    new_data = []
+    for r in repo_data:
+        if "," in r["language_range"]:
+            versions = r["language_range"].split(",")
+            for version in versions:
+                new_repo = deepcopy(r)
+                new_repo["project"] = f"{r['project']}_{version}"
+                new_repo["language_range"] = version
+                new_data.append(new_repo)
+        else:
+            new_data.append(r)
+    return new_data
+
+
+def filter_repos(repo_data, projects, project_types):
+    if projects:
+        if project_types:
+            return [repo for repo in repo_data if repo["project"] in projects or repo["language"] in project_types]
+        return [repo for repo in repo_data if repo["project"] in projects]
+    if project_types:
+        return [repo for repo in repo_data if repo["language"] in project_types]
+    return repo_data
 
 
 def generate(args):
@@ -181,29 +224,30 @@ def generate(args):
     """
     if args.output_dir == '.':
         args.output_dir = pathlib.Path.cwd()
-    if not args.debug_cmds:
-        check_dirs(args.skip_clone, args.clone_dir, args.output_dir)
+
+    project_types = set()
     if args.project_types:
         if ',' in args.project_types:
             project_types = set(args.project_types.split(','))
         else:
             project_types = {args.project_types}
-    else:
-        project_types = {"python", "go", "javascript", "c#", "java"}
 
-    repo_data = read_csv(args.repo_csv, args.projects, args.clone_dir)
-    processed_repos = process_repo_data(repo_data, args.clone_dir, project_types)
+    repo_data = read_csv(args.repo_csv, args.projects, project_types)
+    processed_repos = add_repo_dirs(args.clone_dir, expand_multi_versions(repo_data))
+
+    if not args.debug_cmds:
+        check_dirs(args.skip_clone, args.clone_dir, args.output_dir)
 
     if not args.skip_build:
         run_pre_builds(repo_data, args.output_dir, args.debug_cmds)
 
-    commands = ''
+    commands = ""
     for repo in processed_repos:
-        commands += f'\necho {repo["project"]} started at $(date) >> $CDXGEN_LOG\n'
+        commands += f"\necho {repo['project']} started at $(date) >> $CDXGEN_LOG\n"
         commands += exec_on_repo(args.skip_clone, args.output_dir, args.skip_build, repo)
-        commands += f'\necho {repo["project"]} finished at $(date) >> $CDXGEN_LOG\n\n'
+        commands += f"\necho {repo['project']} finished at $(date) >> $CDXGEN_LOG\n\n"
 
-    commands = ''.join(commands)
+    commands = "".join(commands)
     sh_path = Path.joinpath(args.output_dir, 'cdxgen_commands.sh')
     write_script_file(sh_path, commands, args.debug_cmds)
 
@@ -280,43 +324,21 @@ def list2cmdline(seq):
     return ''.join(result)
 
 
-def process_repo_data(repo_data, clone_dir, project_types):
-    """
-    Process the repo data, adding the 'repo_dir' key and filtering as required.
-
-    Args:
-        repo_data (list[dict]): Repository data
-        clone_dir (pathlib.Path): Destination for cloned repo.
-
-    Returns:
-        list[dict]: The processed repository data
-    """
-    new_data = []
-    for r in repo_data:
-        if r['language'] in project_types:
-            r['repo_dir'] = Path.joinpath(clone_dir, r['language'], r['project'])
-            new_data.append(r)
-    return new_data
-
-
-def read_csv(csv_file, projects, clone_dir):
+def read_csv(csv_file, projects, project_types):
     """
     Reads a CSV file and filters the data based on a list of languages.
 
     Parameters:
         csv_file (pathlib.Path): The path to the CSV file.
         projects (list): A list of projects names to filter on.
-        clone_dir (pathlib.Path): The directory storing the cloned repositories.
-
+        project_types (set): A set of project types to filter on.
     Returns:
         list: A filtered list of repository data.
     """
     with open(csv_file, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         repo_data = list(reader)
-    if projects:
-        repo_data = [repo for repo in repo_data if repo['project'] in projects]
-    return add_repo_dirs(clone_dir, repo_data)
+    return filter_repos(repo_data, projects, project_types)
 
 
 def run_cdxgen(repo, output_dir):
@@ -382,10 +404,9 @@ def write_script_file(file_path, commands, debug_cmds):
     Returns:
         None
     """
-    with open(file_path, 'w', encoding='utf-8') as f:
-        sdkman_path = Path.joinpath(Path('$SDKMAN_DIR'), 'bin', 'sdkman-init.sh')
-        f.write(f'#!/usr/bin/bash\nsource {sdkman_path}\n\n')
-        f.write(commands)
+    sdkman_path = Path.joinpath(Path('$SDKMAN_DIR'), 'bin', 'sdkman-init.sh')
+    cmds = f'#!/usr/bin/bash\nsource {sdkman_path}\n\n{commands}'
+    file_write(str(file_path), cmds, success_msg=f"Wrote script to {file_path}.")
     if debug_cmds:
         print(commands)
 
