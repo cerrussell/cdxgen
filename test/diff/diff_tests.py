@@ -34,7 +34,7 @@ def compare_snapshot(dir1, dir2, options, repo):
     options.file_2 = bom_2
     options.output = f'{dir2}/{repo["project"]}-diff.json'
     if not os.path.exists(bom_1):
-        return f'{bom_1} not found.', f'{bom_1} not found.'
+        return 1, f'{bom_1} not found.', f'{bom_1} not found.'
     status, j1, j2 = compare_dicts(options)
     if status != 0:
         status, result_summary = perform_bom_diff(j1, j2)
