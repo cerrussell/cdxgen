@@ -20,9 +20,16 @@ def build_args():
         nargs=2
     )
     parser.add_argument(
-        "--project-types",
-        "-p",
-        help="Comma separated list of project types to include.",
+        '--projects',
+        '-p',
+        help='Filter to these projects.',
+        dest='projects',
+    )
+    parser.add_argument(
+        '--types',
+        '-t',
+        help='Filter to these project types.',
+        dest='project_types',
     )
     return parser.parse_args()
 
