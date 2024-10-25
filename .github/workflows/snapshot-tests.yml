@@ -5,6 +5,9 @@ on:
   pull_request:
     branches:
       - master
+  push:
+    branches:
+      - master
 
 
 concurrency:
@@ -29,7 +32,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            4.x
             5.0.x
             6.0.x
             7.0.x
