@@ -55,6 +55,8 @@ jobs:
            python -m pip install --upgrade pip
            python -m pip install pytest
            git clone https://github.com/appthreat/cdxgen-samples.git /home/runner/work/original_snapshots
+           cd /home/runner/work/original_snapshots
+           git checkout feature/expand-snapshots
            python -m pip install -r test/diff/requirements.txt
            curl -s "https://get.sdkman.io" | bash
            source "/home/runner/.sdkman/bin/sdkman-init.sh"
