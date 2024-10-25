@@ -7,6 +7,8 @@ from custom_json_diff.lib.custom_diff import compare_dicts, perform_bom_diff, re
 from custom_json_diff.lib.custom_diff_classes import Options
 from custom_json_diff.lib.utils import json_dump
 
+from test.diff.generate import filter_repos
+
 logging.disable(logging.INFO)
 
 
@@ -82,7 +84,7 @@ def read_csv():
     with open(csv_file, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         repo_data = list(reader)
-    return repo_data
+    return filter_repos(repo_data)
 
 
 if __name__ == '__main__':
