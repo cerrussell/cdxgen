@@ -36,10 +36,9 @@ def build_args():
     )
     parser.add_argument(
         '-p',
-        '--projects',
-        help='Filter to these sample projects',
-        dest='projects',
-        nargs='*'
+        '--project_types',
+        help='Filter to these project types.',
+        dest='project_types',
     )
     parser.add_argument(
         '--skip-clone',
@@ -184,9 +183,16 @@ def generate(args):
         args.output_dir = pathlib.Path.cwd()
     if not args.debug_cmds:
         check_dirs(args.skip_clone, args.clone_dir, args.output_dir)
+    if args.project_types:
+        if ',' in args.project_types:
+            project_types = set(args.project_types.split(','))
+        else:
+            project_types = {args.project_types}
+    else:
+        project_types = {"python", "go", "javascript", "c#", "java"}
 
     repo_data = read_csv(args.repo_csv, args.projects, args.clone_dir)
-    processed_repos = process_repo_data(repo_data, args.clone_dir)
+    processed_repos = process_repo_data(repo_data, args.clone_dir, project_types)
 
     if not args.skip_build:
         run_pre_builds(repo_data, args.output_dir, args.debug_cmds)
@@ -274,7 +280,7 @@ def list2cmdline(seq):
     return ''.join(result)
 
 
-def process_repo_data(repo_data, clone_dir):
+def process_repo_data(repo_data, clone_dir, project_types):
     """
     Process the repo data, adding the 'repo_dir' key and filtering as required.
 
@@ -287,8 +293,9 @@ def process_repo_data(repo_data, clone_dir):
     """
     new_data = []
     for r in repo_data:
-        r['repo_dir'] = Path.joinpath(clone_dir, r['language'], r['project'])
-        new_data.append(r)
+        if r['language'] in project_types:
+            r['repo_dir'] = Path.joinpath(clone_dir, r['language'], r['project'])
+            new_data.append(r)
     return new_data
 
 

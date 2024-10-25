@@ -1,12 +1,11 @@
 import argparse
 import csv
-import json
 import logging
 import os
 
 from custom_json_diff.lib.custom_diff import compare_dicts, perform_bom_diff, report_results
 from custom_json_diff.lib.custom_diff_classes import Options
-
+from custom_json_diff.lib.utils import json_dump
 
 logging.disable(logging.INFO)
 
@@ -19,6 +18,11 @@ def build_args():
         default=['/home/runner/work/original_snapshots', '/home/runner/work/new_snapshots'],
         help='Directories containing the snapshots to compare',
         nargs=2
+    )
+    parser.add_argument(
+        "--project-types",
+        "-p",
+        help="Comma separated list of project types to include.",
     )
     return parser.parse_args()
 
@@ -40,7 +44,7 @@ def compare_snapshot(dir1, dir2, options, repo):
     return status, None, None
 
 
-def perform_snapshot_tests(dir1, dir2):
+def perform_snapshot_tests(project_types, dir1, dir2):
     repo_data = read_csv()
 
     options = Options(
@@ -52,6 +56,8 @@ def perform_snapshot_tests(dir1, dir2):
 
     failed_diffs = {}
     for repo in repo_data:
+        if repo["language"] not in project_types:
+            continue
         status, result, summary = compare_snapshot(dir1, dir2, options, repo)
         if result:
             print(result)
@@ -60,8 +66,7 @@ def perform_snapshot_tests(dir1, dir2):
 
     if failed_diffs:
         diff_file = os.path.join(dir2, 'diffs.json')
-        with open(diff_file, 'w') as f:
-            json.dump(failed_diffs, f)
+        json_dump(diff_file, failed_diffs)
         print(f"Results of failed diffs saved to {diff_file}")
     else:
         print("Snapshot tests passed!")
@@ -77,4 +82,11 @@ def read_csv():
 
 if __name__ == '__main__':
     args = build_args()
-    perform_snapshot_tests(args.directories[0], args.directories[1])
+    if args.project_types:
+        if ',' in args.project_types:
+            project_types = set(args.project_types.split(','))
+        else:
+            project_types = {args.project_types}
+    else:
+        project_types = {"python", "go", "javascript", "c#", "java"}
+    perform_snapshot_tests(project_types, args.directories[0], args.directories[1])

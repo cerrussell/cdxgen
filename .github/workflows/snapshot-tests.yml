@@ -60,7 +60,7 @@ jobs:
           CDXGEN_LOG: /home/runner/work/new_snapshots/generate.log
         run: |
           mkdir /home/runner/work/new_snapshots
-          python test/diff/generate.py
+          python test/diff/generate.py -p java,javascript
           bash /home/runner/work/new_snapshots/sdkman_installs.sh
           bash /home/runner/work/new_snapshots/cdxgen_commands.sh
 
@@ -79,7 +79,7 @@ jobs:
 
       - name: Test BOMs
         run: |
-          python test/diff/diff_tests.py
+          python test/diff/diff_tests.py -p java,javascript
           if test -f /home/runner/work/new_snapshots/diffs.json; then
             echo "status=FAILED" >> "$GITHUB_ENV"
           fi
