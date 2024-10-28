@@ -153,7 +153,10 @@ def create_python_venvs(repo_data):
     """
     for r in repo_data:
         if r["language"] == "python":
-            r["build_cmd"] = f"uv venv --python {r['language_range']};source .venv/bin/activate {r['build_cmd']}"
+            if r["package_manager"] == "poetry":
+                r["build_cmd"] = f"poetry env use python {r['language_range']} && {r['build_cmd']}"
+                continue
+            r["build_cmd"] = f"python -m venv .venv {r['language_range']}; source .venv/bin/activate && {r['build_cmd']}"
     return repo_data
 
 
@@ -177,19 +180,25 @@ def exec_on_repo(clone, output_dir, skip_build, repo):
         commands.append(f'{clone_repo(repo["link"], repo["repo_dir"])}')
         commands.append(f'{list2cmdline(["cd", repo["repo_dir"]])}')
         commands.append(f'{checkout_commit(repo["commit"])}')
-    if not skip_build and len(repo["pre_build_cmd"]) > 0:
+    cdxgen_cmd = f"{run_cdxgen(repo, output_dir)}"
+    if not skip_build and repo["pre_build_cmd"]:
         cmds = repo["pre_build_cmd"].split(';')
         cmds = [cmd.lstrip().rstrip() for cmd in cmds]
         for cmd in cmds:
             new_cmd = list(cmd.split(' '))
             commands.append(f'{list2cmdline(new_cmd)}')
-    if not skip_build and len(repo["build_cmd"]) > 0:
+    if not skip_build and repo["build_cmd"]:
         cmds = repo["build_cmd"].split(";")
         cmds = [cmd.lstrip().rstrip() for cmd in cmds]
         for cmd in cmds:
             new_cmd = list(cmd.split(' '))
             commands.append(f"{list2cmdline(new_cmd)}")
-    commands.append(f"{run_cdxgen(repo, output_dir)}")
+        if repo["language"] == "python":
+            if repo["package_manager"] == "pip":
+                cdxgen_cmd = f"source .venv/bin/activate && {cdxgen_cmd}"
+            else:
+                cdxgen_cmd = f"poetry env use {repo['language_range']} && {cdxgen_cmd}"
+    commands.append(cdxgen_cmd)
     commands = "\n".join(commands)
     return commands
 
