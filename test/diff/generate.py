@@ -141,6 +141,22 @@ def clone_repo(url, repo_dir):
     return list2cmdline(clone_cmd)
 
 
+def create_python_venvs(repo_data):
+    """
+    Sets the Python version for each Python repository
+
+    Args:
+        repo_data (list[dict]): Contains the sample repository data
+
+    Returns:
+        list[dict]: The updated repository data
+    """
+    for r in repo_data:
+        if r["language"] == "python":
+            r["build_cmd"] = f"uv venv --python {r['language_range']};source .venv/bin/activate {r['build_cmd']}"
+    return repo_data
+
+
 def exec_on_repo(clone, output_dir, skip_build, repo):
     """
     Determines a sequence of commands on a repository.
@@ -199,7 +215,7 @@ def expand_multi_versions(repo_data):
                 new_data.append(new_repo)
         else:
             new_data.append(r)
-    return set_pyenv_versions(new_data)
+    return create_python_venvs(new_data)
 
 
 def filter_repos(repo_data, projects, project_types):
@@ -390,22 +406,6 @@ def run_pre_builds(repo_data, output_dir, debug_cmds):
     commands = '\n'.join(commands)
     sh_path = Path.joinpath(output_dir, 'sdkman_installs.sh')
     write_script_file(sh_path, commands, debug_cmds)
-
-
-def set_pyenv_versions(repo_data):
-    """
-    Sets the Python version for each Python repository
-
-    Args:
-        repo_data (list[dict]): Contains the sample repository data
-
-    Returns:
-        list[dict]: The updated repository data
-    """
-    for r in repo_data:
-        if r["language"] == "python":
-            r["build_cmd"] = f"pyenv shell {r['language_range']}\n{r['build_cmd']}"
-    return repo_data
 
 
 def write_script_file(file_path, commands, debug_cmds):

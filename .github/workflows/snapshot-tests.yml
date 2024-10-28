@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: '22.x'
 
-      - name: Setup .NET
+      - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
@@ -38,24 +38,16 @@ jobs:
             8.0.x
             9.0.x
 
-
-      - name: Setup pyenv
+      - name: Install uv
         run: |
-          curl https://pyenv.run | bash
-          echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
-          echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-          echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+          curl -LsSf https://astral.sh/uv/install.sh | sh
 
-      - name: Install pyenv versions
+      - name: Install uv versions
         run: |
-          pyenv install 3.9.0 -q
-          pyenv install 3.10.0 -q
-          pyenv install 3.11.0 -q
-          pyenv install 3.12.0 -q
-          pyenv install 3.13.0 -q
+          uv python install 3.9 3.10 3.11 3.12
 
-      - name: Setup pnpm
-      - uses: pnpm/action-setup@v4
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
 
       -  name: cdxgen, sdkman, custom-json-diff installs
          shell: bash
