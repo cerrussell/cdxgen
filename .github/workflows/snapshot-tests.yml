@@ -38,11 +38,23 @@ jobs:
             8.0.x
             9.0.x
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
 
+      - name: Setup pyenv
+        run: |
+          curl https://pyenv.run | bash
+          echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+          echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+          echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+
+      - name: Install pyenv versions
+        run: |
+          pyenv install 3.9.0 -q
+          pyenv install 3.10.0 -q
+          pyenv install 3.11.0 -q
+          pyenv install 3.12.0 -q
+          pyenv install 3.13.0 -q
+
+      - name: Setup pnpm
       - uses: pnpm/action-setup@v4
 
       -  name: cdxgen, sdkman, custom-json-diff installs
@@ -74,7 +86,7 @@ jobs:
           CDXGEN_LOG: /home/runner/work/new_snapshots/generate.log
         run: |
           mkdir /home/runner/work/new_snapshots
-          python test/diff/generate.py -t java,javascript
+          python test/diff/generate.py -t python
           bash /home/runner/work/new_snapshots/sdkman_installs.sh
           bash /home/runner/work/new_snapshots/cdxgen_commands.sh
 
@@ -91,9 +103,10 @@ jobs:
           path: |
             /home/runner/work/new_snapshots
 
+
       - name: Test BOMs
         run: |
-          python test/diff/diff_tests.py -t java,javascript
+          python test/diff/diff_tests.py -t python
           if test -f /home/runner/work/new_snapshots/diffs.json; then
             echo "status=FAILED" >> "$GITHUB_ENV"
           fi
@@ -106,6 +119,7 @@ jobs:
           path: | 
             /home/runner/work/new_snapshots/diffs.json
             /home/runner/work/new_snapshots/*.html
+
 
       - name: Exit with error
         if: ${{ env.status == 'FAILED' }}

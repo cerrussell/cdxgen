@@ -199,7 +199,7 @@ def expand_multi_versions(repo_data):
                 new_data.append(new_repo)
         else:
             new_data.append(r)
-    return new_data
+    return set_pyenv_versions(new_data)
 
 
 def filter_repos(repo_data, projects, project_types):
@@ -243,9 +243,9 @@ def generate(args):
 
     commands = ""
     for repo in processed_repos:
-        commands += f"\necho {repo['project']} started at $(date) >> $CDXGEN_LOG\n"
+        commands += f"\necho {repo['project']} started at $(time) >> $CDXGEN_LOG\n"
         commands += exec_on_repo(args.skip_clone, args.output_dir, args.skip_build, repo)
-        commands += f"\necho {repo['project']} finished at $(date) >> $CDXGEN_LOG\n\n"
+        commands += f"\necho {repo['project']} finished at $(time) >> $CDXGEN_LOG\n\n"
 
     commands = "".join(commands)
     sh_path = Path.joinpath(args.output_dir, 'cdxgen_commands.sh')
@@ -390,6 +390,22 @@ def run_pre_builds(repo_data, output_dir, debug_cmds):
     commands = '\n'.join(commands)
     sh_path = Path.joinpath(output_dir, 'sdkman_installs.sh')
     write_script_file(sh_path, commands, debug_cmds)
+
+
+def set_pyenv_versions(repo_data):
+    """
+    Sets the Python version for each Python repository
+
+    Args:
+        repo_data (list[dict]): Contains the sample repository data
+
+    Returns:
+        list[dict]: The updated repository data
+    """
+    for r in repo_data:
+        if r["language"] == "python":
+            r["build_cmd"] = f"pyenv shell {r['language_range']}\n{r['build_cmd']}"
+    return repo_data
 
 
 def write_script_file(file_path, commands, debug_cmds):
