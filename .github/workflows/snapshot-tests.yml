@@ -43,8 +43,11 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
 
       - name: Install uv versions
+        env:
+          UV_PYTHON_INSTALL_DIR: /home/runner/pythons
         run: |
-          uv python install 3.9 3.10 3.11 3.12
+          uv python install 3.9.20 3.10.11 3.11.4 3.12.1
+          uv python list
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
