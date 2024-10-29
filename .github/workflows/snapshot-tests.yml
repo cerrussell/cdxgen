@@ -74,7 +74,7 @@ jobs:
           path: /home/runner/.sdkman/candidates
           key: "${{ runner.os }}-sdkman-${{ hashFiles('test/diff/repos.csv') }}"
 
-      - name: Generate and run scripts
+      - name: Generate scripts
         env:
           SDKMAN_DIR: /home/runner/.sdkman
           CDXGEN_DEBUG_MODE: debug
@@ -82,14 +82,21 @@ jobs:
         run: |
           mkdir /home/runner/work/new_snapshots
           python test/diff/generate.py -t python
-          bash /home/runner/work/new_snapshots/sdkman_installs.sh
-          bash /home/runner/work/new_snapshots/cdxgen_commands.sh
 
       - name: Upload shell scripts generated as artifact
         uses: actions/upload-artifact@v4
         with:
           name: scripts
           path: /home/runner/work/new_snapshots/*.sh
+
+      - name: Run scripts
+        env:
+          SDKMAN_DIR: /home/runner/.sdkman
+          CDXGEN_DEBUG_MODE: debug
+          CDXGEN_LOG: /home/runner/work/new_snapshots/generate.log
+        run: |
+          bash /home/runner/work/new_snapshots/sdkman_installs.sh
+          bash /home/runner/work/new_snapshots/cdxgen_commands.sh
 
       - name: Upload cdxgen boms
         uses: actions/upload-artifact@v4
