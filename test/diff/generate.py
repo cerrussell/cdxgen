@@ -154,9 +154,9 @@ def create_python_venvs(repo_data):
     for r in repo_data:
         if r["language"] == "python":
             if r["package_manager"] == "poetry":
-                r["build_cmd"] = f"poetry env use python {r['language_range']} && {r['build_cmd']}"
-                continue
-            r["build_cmd"] = f"python -m venv .venv {r['language_range']}; source .venv/bin/activate && {r['build_cmd']}"
+                r["build_cmd"] = f"poetry env use python{r['language_range']} && {r['build_cmd']}"
+            else:
+                r["build_cmd"] = f"python{r['language_range']} -m venv .venv; source .venv/bin/activate && {r['build_cmd']}"
     return repo_data
 
 
