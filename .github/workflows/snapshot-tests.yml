@@ -32,11 +32,11 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            5.0.x
-            6.0.x
-            7.0.x
-            8.0.x
-            9.0.x
+            5.0.408
+            6.0.427
+            7.0.410
+            8.0.403
+            9.0.100-rc.2.24474.11
 
       - name: Install uv
         run: |
