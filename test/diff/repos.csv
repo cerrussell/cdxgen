@@ -4,7 +4,7 @@ javaseccode,,https://github.com/JoyChou93/java-sec-code.git,java8,8,,,,,mvn -B c
 restic,,https://github.com/restic/restic.git,go,,,,,,go run build.go,3786536dc18ef27aedcfa8e4c6953b48353eee79
 syncthing,,https://github.com/syncthing/syncthing.git,go,,,,,,go run build.go,ba6ac2f604eb1cd27764460b687537c5e40aaaf8
 tinydb_poetry,,https://github.com/msiemens/tinydb.git,python,"3.9,3.10,3.11,3.12","pyproject.toml,poetry.lock",poetry,,,poetry install,10644a0e07ad180c5b756aba272ee6b0dbd12df8
-tinydb,,https://github.com/msiemens/tinydb.git,python,"3.9,3.10,3.11,3.12",pyproject.toml,pip,,rm /home/runner/work/src_repos/tinydb/poetry.lock,pip install .,10644a0e07ad180c5b756aba272ee6b0dbd12df8
+tinydb,,https://github.com/msiemens/tinydb.git,python,"3.9,3.10,3.11,3.12",pyproject.toml,pip,,rm poetry.lock,pip install .,10644a0e07ad180c5b756aba272ee6b0dbd12df8
 numba,with native c lib,https://github.com/numba/numba.git,python,"3.9,3.10,3.11,3.12","setup.py,requirements.txt",pip,,,python setup.py install,53e976f1b0c6683933fa0a93738362914bffc1cd
 funcy,,https://github.com/Suor/funcy.git,python,"3.9,3.10",setup.py,pip,,,python setup.py install,859056d039adea75c1c3550286437ce0b612fe92
 github_readme_stats,,https://github.com/anuraghazra/github-readme-stats.git,javascript,>=18,package-lock.json,npm,,,npm install .,9a0d9ae2c17e007cbb8e9f32654941e1f0a8268e
@@ -13,4 +13,4 @@ astro,,https://github.com/withastro/astro.git,javascript,>=18.17.1,"package.json
 plantuml,,https://github.com/plantuml/plantuml.git,java8,8,,gradle,,,gradle clean build -x javaDoc -PjavacRelease=8,8eb791f39478778788fd47a9195dc1b2feb3eade
 plantuml_17,,https://github.com/plantuml/plantuml.git,java17,17,,gradle,,,gradle clean build -x javaDoc -PjavacRelease=17,8eb791f39478778788fd47a9195dc1b2feb3eade
 jazzer,,https://github.com/CodeIntelligenceTesting/jazzer.git,java8,8,,bazelisk,7.3.0,,bazel build,3947707d7db7e5cae0c8cfaeb10bdfeb06fc32bb
-stripe_dotnet,,https://github.com/stripe/stripe-dotnet.git,c#,"5.x,6.x,7.x,8.x,9.x",,,,,,e1641fed1e90d40b10ff9250e2a75baec88f0a8c
+stripe_dotnet,,https://github.com/stripe/stripe-dotnet.git,dotnet,"5.x,6.x,7.x,8.x,9.x",,,,,"dotnet build src -c Release",e1641fed1e90d40b10ff9250e2a75baec88f0a8c

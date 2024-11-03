@@ -192,15 +192,15 @@ def exec_on_repo(clone, output_dir, skip_build, repo):
         cmds = [cmd.lstrip().rstrip() for cmd in cmds]
         for cmd in cmds:
             new_cmd = list(cmd.split(" "))
+            if repo["language"] == "dotnet":
+                new_cmd.extend(["-r", f"{repo['language_range']}"])
             commands.append(f"{list2cmdline(new_cmd)}")
-        if repo["language"] == "python":
-            commands[-1] = f"{commands[-1]} && {cdxgen_cmd}"
-            # if repo["package_manager"] == "pip":
-            #     cdxgen_cmd = f"source .venv/bin/activate && {cdxgen_cmd}"
-            # else:
-            #     cdxgen_cmd = f"poetry env use {repo['language_range']} && {cdxgen_cmd}"
-    if not all((repo["language"] == "python", not skip_build, repo["build_cmd"])):
-        commands.append(cdxgen_cmd)
+        # if repo["language"] == "python":
+        #     if repo["package_manager"] == "pip":
+        #         cdxgen_cmd = f"source .venv/bin/activate && {cdxgen_cmd}"
+        #     else:
+        #         cdxgen_cmd = f"poetry env use {repo['language_range']} && {cdxgen_cmd}"
+    commands.append(cdxgen_cmd)
     commands = "\n".join(commands)
     return commands
 

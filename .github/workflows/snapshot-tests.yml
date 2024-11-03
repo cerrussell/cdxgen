@@ -81,7 +81,7 @@ jobs:
           CDXGEN_LOG: /home/runner/work/new_snapshots/generate.log
         run: |
           mkdir /home/runner/work/new_snapshots
-          python test/diff/generate.py -t python
+          python test/diff/generate.py -t dotnet
 
       - name: Upload shell scripts generated as artifact
         uses: actions/upload-artifact@v4
@@ -108,7 +108,7 @@ jobs:
 
       - name: Test BOMs
         run: |
-          python test/diff/diff_tests.py -t python
+          python test/diff/diff_tests.py -t dotnet
           if test -f /home/runner/work/new_snapshots/diffs.json; then
             echo "status=FAILED" >> "$GITHUB_ENV"
           fi

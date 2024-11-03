@@ -2,6 +2,7 @@ import argparse
 import csv
 import logging
 import os
+from typing import Dict, List, Set
 
 from custom_json_diff.lib.custom_diff import compare_dicts, perform_bom_diff, report_results
 from custom_json_diff.lib.custom_diff_classes import Options
@@ -36,7 +37,7 @@ def build_args():
     return parser.parse_args()
 
 
-def compare_snapshot(dir1, dir2, options, repo):
+def compare_snapshot(dir1: str, dir2: str, options: Options, repo: Dict):
     bom_1 = f"{dir1}/{repo['project']}-bom.json"
     bom_2 = f"{dir2}/{repo['project']}-bom.json"
     options.file_1 = bom_1
@@ -45,32 +46,27 @@ def compare_snapshot(dir1, dir2, options, repo):
     if not os.path.exists(bom_1):
         return 1, f'{bom_1} not found.', f'{bom_1} not found.'
     status, j1, j2 = compare_dicts(options)
-    if status != 0:
+    if status:
         status, result_summary = perform_bom_diff(j1, j2)
-        if status != 0:
-            report_results(status, result_summary, options, j1, j2)
-            return status, f"{repo['project']} failed.", result_summary
-    return status, None, None
+        report_results(status, result_summary, options, j1, j2)
+        return status, f"{repo['project']} failed.", result_summary
+    return status, f"{repo['project']} succeeded.", {}
 
 
-def perform_snapshot_tests(dir1, dir2, projects, project_types):
+def perform_snapshot_tests(dir1: str, dir2: str, projects: List, project_types: Set):
     repo_data = read_csv(projects, project_types)
-
     options = Options(
         allow_new_versions=True,
         allow_new_data=True,
         preconfig_type="bom",
         include=["properties", "evidence", "licenses"],
     )
-
     failed_diffs = {}
     for repo in repo_data:
         status, result, summary = compare_snapshot(dir1, dir2, options, repo)
-        if result:
-            print(result)
-        if status != 0:
+        print(result)
+        if status:
             failed_diffs[repo["project"]] = summary
-
     if failed_diffs:
         diff_file = os.path.join(dir2, 'diffs.json')
         json_dump(diff_file, failed_diffs)
@@ -95,5 +91,5 @@ if __name__ == '__main__':
         else:
             project_types = {args.project_types}
     else:
-        project_types = None
+        project_types = set()
     perform_snapshot_tests(args.directories[0], args.directories[1], args.projects, project_types)
