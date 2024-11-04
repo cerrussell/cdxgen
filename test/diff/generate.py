@@ -199,7 +199,7 @@ def exec_on_repo(clone, output_dir, skip_build, repo):
         #         cdxgen_cmd = f"source .venv/bin/activate && {cdxgen_cmd}"
         #     else:
         #         cdxgen_cmd = f"poetry env use {repo['language_range']} && {cdxgen_cmd}"
-    commands.append(f"time TIMEFORMAT='{repo['project']}: %E' {run_cdxgen(repo, output_dir)} >> $CDXGEN_LOG")
+    commands.append(f"$(time TIMEFORMAT='{repo['project']}: %E' {run_cdxgen(repo, output_dir)}) >> $CDXGEN_LOG")
     commands = "\n".join(commands)
     return commands
 
