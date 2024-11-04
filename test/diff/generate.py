@@ -180,7 +180,6 @@ def exec_on_repo(clone, output_dir, skip_build, repo):
         commands.append(f'{clone_repo(repo["link"], repo["repo_dir"])}')
         commands.append(f'{list2cmdline(["cd", repo["repo_dir"]])}')
         commands.append(f'{checkout_commit(repo["commit"])}')
-    cdxgen_cmd = f"{run_cdxgen(repo, output_dir)}"
     if not skip_build and repo["pre_build_cmd"]:
         cmds = repo["pre_build_cmd"].split(';')
         cmds = [cmd.lstrip().rstrip() for cmd in cmds]
@@ -200,7 +199,7 @@ def exec_on_repo(clone, output_dir, skip_build, repo):
         #         cdxgen_cmd = f"source .venv/bin/activate && {cdxgen_cmd}"
         #     else:
         #         cdxgen_cmd = f"poetry env use {repo['language_range']} && {cdxgen_cmd}"
-    commands.append(cdxgen_cmd)
+    commands.append(f"time TIMEFORMAT='{repo['project']}: %E' {run_cdxgen(repo, output_dir)} >> $CDXGEN_LOG")
     commands = "\n".join(commands)
     return commands
 
@@ -270,9 +269,9 @@ def generate(args):
 
     commands = ""
     for repo in processed_repos:
-        commands += f"\necho {repo['project']} started at $(time) >> $CDXGEN_LOG\n"
+        # commands += f"\necho {repo['project']} started at $(time) >> $CDXGEN_LOG\n"
         commands += exec_on_repo(args.skip_clone, args.output_dir, args.skip_build, repo)
-        commands += f"\necho {repo['project']} finished at $(time) >> $CDXGEN_LOG\n\n"
+        # commands += f"\necho {repo['project']} finished at $(time) >> $CDXGEN_LOG\n\n"
 
     commands = "".join(commands)
     sh_path = Path.joinpath(args.output_dir, 'cdxgen_commands.sh')
