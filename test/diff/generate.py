@@ -191,8 +191,8 @@ def exec_on_repo(clone, output_dir, skip_build, repo):
         cmds = [cmd.lstrip().rstrip() for cmd in cmds]
         for cmd in cmds:
             new_cmd = list(cmd.split(" "))
-            if repo["language"] == "dotnet":
-                new_cmd.extend(["-r", f"{repo['language_range']}"])
+            # if repo["language"] == "dotnet":
+            #     new_cmd.extend(["-r", f"{repo['language_range']}"])
             commands.append(f"{list2cmdline(new_cmd)}")
         # if repo["language"] == "python":
         #     if repo["package_manager"] == "pip":
