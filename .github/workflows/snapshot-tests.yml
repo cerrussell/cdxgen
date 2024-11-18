@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
 
-  generate:
+  test_non_dotnet:
     runs-on: ubuntu-latest
     steps:
 
@@ -81,7 +81,7 @@ jobs:
           CDXGEN_LOG: /home/runner/work/new_snapshots/generate.log
         run: |
           mkdir /home/runner/work/new_snapshots
-          python test/diff/generate.py -t dotnet
+          python test/diff/generate.py -t python,java8,java17,javascript
 
       - name: Upload shell scripts generated as artifact
         uses: actions/upload-artifact@v4
@@ -108,7 +108,7 @@ jobs:
 
       - name: Test BOMs
         run: |
-          python test/diff/diff_tests.py -t dotnet
+          python test/diff/diff_tests.py -t python,java8,java17,javascript
           if test -f /home/runner/work/new_snapshots/diffs.json; then
             echo "status=FAILED" >> "$GITHUB_ENV"
           fi
@@ -119,6 +119,90 @@ jobs:
         with:
           name: diffs
           path: | 
+            /home/runner/work/new_snapshots/diffs.json
+            /home/runner/work/new_snapshots/*.html
+
+
+      - name: Exit with error
+        if: ${{ env.status == 'FAILED' }}
+        run: exit 1
+
+  test_dotnet:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: ['5.0.x', '6.0.x', '7.0.x', '8.0.x', '9.0.x']
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4.0.1
+        with:
+          node-version: '22.x'
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: cdxgen, custom-json-diff installs
+        shell: bash
+        env:
+          SHELL: bash
+        run: |
+          cdxgen_tarball=$(pnpm pack | tail -1)
+          npm install -g "$cdxgen_tarball"
+          python -m pip install --upgrade pip
+          git clone https://github.com/appthreat/cdxgen-samples.git /home/runner/work/original_snapshots
+          python -m pip install -r test/diff/requirements.txt
+          cd /home/runner/work/original_snapshots
+          git checkout feature/expand-snapshots
+
+      - name: Generate scripts
+        env:
+          CDXGEN_DEBUG_MODE: debug
+          CDXGEN_LOG: /home/runner/work/new_snapshots/generate.log
+        run: |
+          mkdir /home/runner/work/new_snapshots
+          python test/diff/generate.py -t dotnet
+
+      - name: Upload shell scripts generated as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scripts_dotnet_${{ matrix.dotnet-version }}
+          path: /home/runner/work/new_snapshots/*.sh
+
+      - name: Run scripts
+        env:
+          SDKMAN_DIR: /home/runner/.sdkman
+          CDXGEN_DEBUG_MODE: debug
+          CDXGEN_LOG: /home/runner/work/new_snapshots/generate.log
+        run: |
+          bash /home/runner/work/new_snapshots/sdkman_installs.sh
+          bash /home/runner/work/new_snapshots/cdxgen_commands.sh
+
+      - name: Upload cdxgen boms
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet_boms_${{ matrix.dotnet-version }}
+          path: |
+            /home/runner/work/new_snapshots
+
+      - name: Test BOMs
+        run: |
+          python test/diff/diff_tests.py -t dotnet
+          if test -f /home/runner/work/new_snapshots/diffs.json; then
+            echo "status=FAILED" >> "$GITHUB_ENV"
+          fi
+
+      - name: Upload diff
+        if: ${{ env.status == 'FAILED' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: diffs_dotnet_${{ matrix.dotnet-version }}
+          path: |
             /home/runner/work/new_snapshots/diffs.json
             /home/runner/work/new_snapshots/*.html
 
