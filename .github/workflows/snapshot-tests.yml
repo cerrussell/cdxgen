@@ -161,11 +161,14 @@ jobs:
           python -m pip install --upgrade pip
           git clone https://github.com/appthreat/cdxgen-samples.git /home/runner/work/original_snapshots
           python -m pip install -r test/diff/requirements.txt
+          curl -s "https://get.sdkman.io" | bash
+          source "/home/runner/.sdkman/bin/sdkman-init.sh"
           cd /home/runner/work/original_snapshots
           git checkout feature/expand-snapshots
 
       - name: Generate scripts
         env:
+          SDKMAN_DIR: /home/runner/.sdkman
           CDXGEN_DEBUG_MODE: debug
           CDXGEN_LOG: /home/runner/work/new_snapshots/generate.log
         run: |
