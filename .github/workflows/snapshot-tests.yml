@@ -38,6 +38,7 @@ jobs:
             8.0.x
             9.0.x
 
+
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -146,6 +147,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
 
       - name: cdxgen, custom-json-diff installs
         shell: bash
